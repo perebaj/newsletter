@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  newsletter:
+    image: newsletter:dev
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+      args:
+        GO_VERSION: $GO_VERSION
+        GOLANGCI_LINT_VERSION: $GOLANGCI_LINT_VERSION
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/app/src
+    command: go run ./cmd/newsletter
+ 
+  mongodb:
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - mongodbdata:/data/db
+    image: mongo:7.0
+
+volumes:
+  mongodbdata:
+
+

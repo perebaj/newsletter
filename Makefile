@@ -17,6 +17,10 @@ test:
 		go test ./... -timeout 10s -race; \
 	fi
 
+.PHONY: integration-test
+integration-test:
+	go test -timeout 5s -tags=integration ./... 
+
 ## builds the service
 .PHONY: service
 service:
@@ -83,6 +87,10 @@ dev/logs:
 .PHONY: dev/stop
 dev/stop:
 	docker-compose stop
+
+## Access the container
+dev:
+	@$(devrun) bash
 
 ## Display help for all targets
 .PHONY: help

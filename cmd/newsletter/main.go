@@ -28,5 +28,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("PING")
+
+	fmt.Println("Connected to MongoDB!")
+
+	collection := client.Database("newsletter").Collection("newsletter")
+	res, err := collection.InsertOne(ctx, map[string]string{"name": "pi", "value": "3.14159"})
+	if err != nil {
+		panic(err)
+	}
+	id := res.InsertedID
+	fmt.Println(id)
 }

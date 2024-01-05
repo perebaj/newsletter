@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Newsletter is the struct that gather what websites to scrape for an user email
@@ -16,24 +16,10 @@ type Newsletter struct {
 
 // Site is the struct that gather the scraped content of a website
 type Site struct {
-	UserEmail  string    `bson:"user_email"`
-	URL        string    `bson:"url"`
-	Content    string    `bson:"content"`
-	ScrapeDate time.Time `bson:"scrape_date"`
-}
-
-// NLStorage joins the Mongo operations for the Newsletter collection
-type NLStorage struct {
-	client *mongo.Client
-	DBName string
-}
-
-// NewNLStorage initializes a new NLStorage
-func NewNLStorage(client *mongo.Client, DBName string) *NLStorage {
-	return &NLStorage{
-		client: client,
-		DBName: DBName,
-	}
+	UserEmail      string    `bson:"user_email"`
+	URL            string    `bson:"url"`
+	Content        string    `bson:"content"`
+	ScrapeDatetime time.Time `bson:"scrape_date"`
 }
 
 // SaveNewsletter saves a newsletter in the database
@@ -62,4 +48,44 @@ func (m *NLStorage) Newsletter() ([]Newsletter, error) {
 	}
 
 	return newsletters, nil
+}
+
+// SaveSite saves a site in the database
+func (m *NLStorage) SaveSite(ctx context.Context, sites []Site) error {
+	database := m.client.Database(m.DBName)
+	collection := database.Collection("sites")
+
+	//parse sites to []interface{} to use InsertMany
+	var docs []interface{}
+	for _, site := range sites {
+		docs = append(docs, site)
+	}
+	_, err := collection.InsertMany(ctx, docs)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Sites returns given an user email and a URL, the last scraped content of that URL
+func (m *NLStorage) Sites(usrEmail, URL string) ([]Site, error) {
+	database := m.client.Database(m.DBName)
+	collection := database.Collection("sites")
+	max := int64(2)
+
+	filter := bson.M{"user_email": usrEmail, "url": URL}
+	sort := bson.D{{Key: "scrape_date", Value: -1}}
+	opts := options.Find().SetSort(sort)
+	opts.Limit = &max
+
+	cursor, err := collection.Find(context.Background(), filter, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	var sites []Site
+	if err = cursor.All(context.Background(), &sites); err != nil {
+		return nil, err
+	}
+	return sites, nil
 }

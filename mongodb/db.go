@@ -35,3 +35,17 @@ func OpenDB(ctx context.Context, cfg Config) (*mongo.Client, error) {
 
 	return client, nil
 }
+
+// NLStorage joins the Mongo operations for the Newsletter collection
+type NLStorage struct {
+	client *mongo.Client
+	DBName string
+}
+
+// NewNLStorage initializes a new NLStorage
+func NewNLStorage(client *mongo.Client, DBName string) *NLStorage {
+	return &NLStorage{
+		client: client,
+		DBName: DBName,
+	}
+}

@@ -19,7 +19,7 @@ test:
 
 .PHONY: integration-test
 integration-test:
-	go test -timeout 5s -tags=integration ./... 
+	go test -timeout 5s -tags=integration ./... -v
 
 ## builds the service
 .PHONY: service

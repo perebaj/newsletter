@@ -13,12 +13,21 @@ type Config struct {
 	URI string
 }
 
-// Connect connects to the MongoDB instance.
-func Connect(ctx context.Context, cfg Config) (*mongo.Client, error) {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI))
+// OpenDB connects to the MongoDB instance.
+func OpenDB(ctx context.Context, cfg Config) (*mongo.Client, error) {
+	bsonOpts := &options.BSONOptions{
+		UseJSONStructTags: true,
+		NilSliceAsEmpty:   true,
+	}
+
+	client, err := mongo.Connect(ctx, options.Client().
+		ApplyURI(cfg.URI).
+		SetBSONOptions(bsonOpts))
+
 	if err != nil {
 		return nil, err
 	}
+
 	err = client.Ping(ctx, nil)
 	if err != nil {
 		return nil, err

@@ -40,7 +40,7 @@ func Worker(jobs <-chan string, result chan<- string, f func(string) (string, er
 	for j := range jobs {
 		content, err := f(j)
 		if err != nil {
-			fmt.Printf("error getting reference %s: %v", j, err)
+			slog.Error(fmt.Sprintf("error getting reference: %s", j), "error", err)
 		}
 		result <- content
 	}

@@ -20,8 +20,8 @@ type Config struct {
 func main() {
 
 	cfg := Config{
-		LogLevel: "INFO",
-		LogType:  "json",
+		LogLevel: getEnvWithDefault("LOG_LEVEL", "INFO"),
+		LogType:  getEnvWithDefault("LOG_TYPE", "json"),
 	}
 
 	signalCh := make(chan os.Signal, 1)
@@ -82,4 +82,12 @@ func setUpLog(cfg Config) error {
 
 	slog.SetDefault(logger)
 	return nil
+}
+
+func getEnvWithDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }

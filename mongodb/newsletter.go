@@ -55,7 +55,6 @@ func (m *NLStorage) SaveSite(ctx context.Context, sites []Site) error {
 	database := m.client.Database(m.DBName)
 	collection := database.Collection("sites")
 
-	//parse sites to []interface{} to use InsertMany
 	var docs []interface{}
 	for _, site := range sites {
 		docs = append(docs, site)

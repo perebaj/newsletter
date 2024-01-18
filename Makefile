@@ -17,6 +17,12 @@ test:
 		go test ./... -timeout 10s -race; \
 	fi
 
+## Show the tests coverage
+.PHONY: coverage
+coverage:
+	go test -coverprofile=c.out 
+	go tool cover -html=c.out
+
 .PHONY: integration-test
 integration-test:
 	go test -timeout 5s -tags=integration ./... -v

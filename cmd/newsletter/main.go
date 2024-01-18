@@ -11,6 +11,7 @@ import (
 	"github.com/perebaj/newsletter"
 )
 
+// Config is the struct that contains the configuration for the service.
 type Config struct {
 	LogLevel string
 	LogType  string

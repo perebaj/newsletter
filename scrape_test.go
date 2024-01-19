@@ -1,45 +1,38 @@
 package newsletter
 
 import (
-	"fmt"
+	"context"
 	"net/http"
 	"net/http/httptest"
-	"sync"
+	"os"
 	"testing"
 	"time"
+
+	"github.com/perebaj/newsletter/mongodb"
 )
 
-func TestWorker(_ *testing.T) {
-	urls := make(chan string)
-	results := make(chan string)
+const fakeURL = "http://fakeurl.test"
 
-	f := func(s string) (string, error) {
-		time.Sleep(100 * time.Millisecond)
-		return fmt.Sprintf("job %s done", s), nil
+func TestCrawlerRun(t *testing.T) {
+	timeoutCh := time.After(time.Duration(150) * time.Millisecond)
+	ctx := context.Background()
+	s := NewStorageMock()
+
+	f := func(string) (string, error) {
+		return "Hello, World!", nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go Worker(&wg, urls, results, f)
-	go Worker(&wg, urls, results, f)
+	signalCh := make(chan os.Signal, 1)
 
+	c := NewCrawler(1, time.Duration(1000)*time.Millisecond, signalCh)
 	go func() {
-		urls <- "job1"
-		urls <- "job2"
-		urls <- "job3"
-		urls <- "job4"
-		urls <- "job5"
-		urls <- "job6"
-		defer close(urls)
+		c.Run(ctx, s, f)
 	}()
 
-	go func() {
-		wg.Wait()
-		defer close(results)
-	}()
-
-	for i := 0; i < 6; i++ {
-		<-results
+	select {
+	case <-signalCh:
+		t.Error("unexpected signal error")
+	case <-timeoutCh:
 	}
 }
 
@@ -78,4 +71,24 @@ func TestGetReferences_Status500(t *testing.T) {
 	if got != "" {
 		t.Errorf("expected empty body, got %s", got)
 	}
+}
+
+type StorageMock interface {
+	SaveSite(ctx context.Context, site []mongodb.Site) error
+	DistinctEngineerURLs(ctx context.Context) ([]interface{}, error)
+}
+
+type StorageMockImpl struct {
+}
+
+func NewStorageMock() StorageMock {
+	return StorageMockImpl{}
+}
+
+func (s StorageMockImpl) SaveSite(ctx context.Context, site []mongodb.Site) error {
+	return nil
+}
+
+func (s StorageMockImpl) DistinctEngineerURLs(ctx context.Context) ([]interface{}, error) {
+	return []interface{}{fakeURL}, nil
 }

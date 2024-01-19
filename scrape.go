@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 )
 
-// GetReferences returns the content of a url as a string
-func GetReferences(ref string) (string, error) {
-	resp, err := http.Get(ref)
+// Fetch returns the content of a url as a string
+func Fetch(url string) (string, error) {
+	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
@@ -28,7 +29,7 @@ func GetReferences(ref string) (string, error) {
 		}
 		bodyString = buf.String()
 	} else {
-		slog.Warn(fmt.Sprintf("%s returned status code %d", ref, resp.StatusCode))
+		slog.Warn(fmt.Sprintf("%s returned status code %d", url, resp.StatusCode))
 		return "", nil
 	}
 
@@ -36,11 +37,12 @@ func GetReferences(ref string) (string, error) {
 }
 
 // Worker use a worker pool to process jobs and send the restuls through a channel
-func Worker(jobs <-chan string, result chan<- string, f func(string) (string, error)) {
-	for j := range jobs {
-		content, err := f(j)
+func Worker(wg *sync.WaitGroup, urls <-chan string, result chan<- string, f func(string) (string, error)) {
+	defer wg.Done()
+	for url := range urls {
+		content, err := f(url)
 		if err != nil {
-			slog.Error(fmt.Sprintf("error getting reference: %s", j), "error", err)
+			slog.Error(fmt.Sprintf("error getting reference: %s", url), "error", err)
 		}
 		result <- content
 	}

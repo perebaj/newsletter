@@ -88,7 +88,7 @@ func main() {
 		defer close(URLCh)
 		for range time.Tick(cfg.LoopDurationMinutes) {
 			slog.Info("fetching engineers")
-			gotURLs, err := storage.DistinctEngineerURL(ctx)
+			gotURLs, err := storage.DistinctEngineerURLs(ctx)
 			if err != nil {
 				slog.Error("error getting engineers", "error", err)
 				signalCh <- syscall.SIGTERM

@@ -52,8 +52,8 @@ func (m *NLStorage) SaveEngineer(ctx context.Context, e Engineer) error {
 	return nil
 }
 
-// DistinctEngineerURL returns all url sites of each distinct engineer
-func (m *NLStorage) DistinctEngineerURL(ctx context.Context) ([]interface{}, error) {
+// DistinctEngineerURLs returns all url sites of each distinct engineer
+func (m *NLStorage) DistinctEngineerURLs(ctx context.Context) ([]interface{}, error) {
 	database := m.client.Database(m.DBName)
 	collection := database.Collection("engineers")
 

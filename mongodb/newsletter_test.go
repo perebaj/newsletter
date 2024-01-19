@@ -216,7 +216,7 @@ func TestNLStorageSaveEngineer(t *testing.T) {
 	t.Cleanup(teardown(ctx, client, DBName))
 }
 
-func TestNLSEngineersURL(t *testing.T) {
+func TestNLStorageDistinctEngineerURLs(t *testing.T) {
 	ctx := context.Background()
 	client, DBName := setup(ctx, t)
 
@@ -249,7 +249,7 @@ func TestNLSEngineersURL(t *testing.T) {
 		t.Fatal("error saving 3 engineer", err)
 	}
 
-	got, err := NLStorage.DistinctEngineerURL(ctx)
+	got, err := NLStorage.DistinctEngineerURLs(ctx)
 	if err != nil {
 		t.Fatal("error getting engineers", err)
 	}

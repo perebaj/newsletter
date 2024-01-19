@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -17,21 +16,19 @@ import (
 
 // Config is the struct that contains the configuration for the service.
 type Config struct {
-	LogLevel            string
-	LogType             string
-	LoopDurationMinutes time.Duration
-	Mongo               mongodb.Config
+	LogLevel string
+	LogType  string
+	Mongo    mongodb.Config
 }
 
 func main() {
 
 	cfg := Config{
-		LogLevel: getEnvWithDefault("LOG_LEVEL", "INFO"),
-		LogType:  getEnvWithDefault("LOG_TYPE", "json"),
+		LogLevel: getEnvWithDefault("LOG_LEVEL", ""),
+		LogType:  getEnvWithDefault("LOG_TYPE", ""),
 		Mongo: mongodb.Config{
 			URI: getEnvWithDefault("NL_MONGO_URI", ""),
 		},
-		LoopDurationMinutes: time.Duration(10) * time.Second,
 	}
 
 	signalCh := make(chan os.Signal, 1)
@@ -74,49 +71,10 @@ func main() {
 		signalCh <- syscall.SIGTERM
 	}
 
-	URLCh := make(chan string)
-	fetchResultCh := make(chan string)
-
-	var wg sync.WaitGroup
-	wg.Add(5)
-
-	for i := 0; i < 5; i++ {
-		go newsletter.Worker(&wg, URLCh, fetchResultCh, newsletter.Fetch)
-	}
+	crawler := newsletter.NewCrawler(5, time.Duration(10)*time.Second, signalCh)
 
 	go func() {
-		defer close(URLCh)
-		for range time.Tick(cfg.LoopDurationMinutes) {
-			slog.Info("fetching engineers")
-			gotURLs, err := storage.DistinctEngineerURLs(ctx)
-			if err != nil {
-				slog.Error("error getting engineers", "error", err)
-				signalCh <- syscall.SIGTERM
-			}
-
-			slog.Info("fetched engineers", "engineers", len(gotURLs))
-			for _, url := range gotURLs {
-				URLCh <- url.(string)
-			}
-		}
-	}()
-
-	go func() {
-		wg.Wait()
-		defer close(fetchResultCh)
-	}()
-
-	go func() {
-		for v := range fetchResultCh {
-			slog.Info("saving fetched sites response", "response", v[:10])
-			err := storage.SaveSite(ctx, []mongodb.Site{
-				{Content: v, ScrapeDatetime: time.Now().UTC()},
-			})
-			if err != nil {
-				slog.Error("error saving site result", "error", err)
-				signalCh <- syscall.SIGTERM
-			}
-		}
+		crawler.Run(ctx, storage, newsletter.Fetch)
 	}()
 
 	<-signalCh

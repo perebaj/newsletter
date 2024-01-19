@@ -11,6 +11,8 @@ services:
         GOLANGCI_LINT_VERSION: $GOLANGCI_LINT_VERSION
     environment:
       NL_MONGO_URI: "mongodb://root:root@mongodb:27017"
+      LOG_LEVEL: "DEBUG"
+      LOG_TYPE: "json"
     depends_on:
       - mongodb
     volumes:

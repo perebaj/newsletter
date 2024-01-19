@@ -8,7 +8,11 @@ Some skilled engineers even have a blog site where they push some gold content, 
 
 # Roadmap
 
-- Given a list of URLs and a user email, scrape those URLs and associate them with the email
-- Save the results of the web scrape into a MongoDB to create the comparison logic
-- Create a scheduler mechanism that will activate the scrape and comparison logic
-- Trigger an email mechanism to send messages to the users when they favorite author publish something new 🏖️
+This program aims to create the following features:
+
+- Given a list of websites, that are located in a MongoDB collection, scrape the content of each website and save it in another MongoDB collection.
+- After the scraping, calculate the similarity between the new content and the previous content of each website, and update the MongoDB collection
+with this information.
+- All the registered users will receive an email according to the URL that they have registered notifying them about news in their favorite engineers websites.
+
+Obs: All these flows will be trigerred by a cron job.

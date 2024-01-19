@@ -24,8 +24,8 @@ type Config struct {
 func main() {
 
 	cfg := Config{
-		LogLevel: getEnvWithDefault("LOG_LEVEL", "INFO"),
-		LogType:  getEnvWithDefault("LOG_TYPE", "json"),
+		LogLevel: getEnvWithDefault("LOG_LEVEL", ""),
+		LogType:  getEnvWithDefault("LOG_TYPE", ""),
 		Mongo: mongodb.Config{
 			URI: getEnvWithDefault("NL_MONGO_URI", ""),
 		},

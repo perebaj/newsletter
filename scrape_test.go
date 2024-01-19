@@ -13,6 +13,8 @@ import (
 
 const fakeURL = "http://fakeurl.test"
 
+// Even not verifying the result, this test is useful to check if the crawler is running properly, since it is
+// using Mocks for the Storage and the Fetch function.
 func TestCrawlerRun(t *testing.T) {
 	timeoutCh := time.After(time.Duration(150) * time.Millisecond)
 	ctx := context.Background()
@@ -73,6 +75,7 @@ func TestGetReferences_Status500(t *testing.T) {
 	}
 }
 
+// TODO: Move the StorageMock to a separate file, preferable in the same package(mongodb)
 type StorageMock interface {
 	SaveSite(ctx context.Context, site []mongodb.Site) error
 	DistinctEngineerURLs(ctx context.Context) ([]interface{}, error)
@@ -85,10 +88,10 @@ func NewStorageMock() StorageMock {
 	return StorageMockImpl{}
 }
 
-func (s StorageMockImpl) SaveSite(ctx context.Context, site []mongodb.Site) error {
+func (s StorageMockImpl) SaveSite(_ context.Context, _ []mongodb.Site) error {
 	return nil
 }
 
-func (s StorageMockImpl) DistinctEngineerURLs(ctx context.Context) ([]interface{}, error) {
+func (s StorageMockImpl) DistinctEngineerURLs(_ context.Context) ([]interface{}, error) {
 	return []interface{}{fakeURL}, nil
 }

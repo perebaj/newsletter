@@ -21,7 +21,7 @@ type PageContent struct {
 	URL     string
 }
 
-// Storage is the interface that wraps the basic methods to save data and get data from the database
+// Storage is the interface that wraps the basic methods to save and get data from the database
 type Storage interface {
 	SaveSite(ctx context.Context, site []mongodb.Site) error
 	DistinctEngineerURLs(ctx context.Context) ([]interface{}, error)
@@ -50,7 +50,7 @@ func NewCrawler(maxJobs int, s time.Duration, signalCh chan os.Signal) *Crawler 
 	}
 }
 
-// Run starts the crawler, s is the storage to save the results, f is the function to get the content of a url
+// Run starts the crawler, where s represents the storage and f the function to fetch the content of a website
 func (c *Crawler) Run(ctx context.Context, s Storage, f func(string) (string, error)) {
 	c.wg.Add(c.MaxJobs)
 	for i := 0; i < c.MaxJobs; i++ {
@@ -60,14 +60,14 @@ func (c *Crawler) Run(ctx context.Context, s Storage, f func(string) (string, er
 	go func() {
 		defer close(c.URLch)
 		for range time.Tick(c.scheduler) {
-			slog.Info("fetching engineers")
+			slog.Debug("fetching engineers")
 			gotURLs, err := s.DistinctEngineerURLs(ctx)
 			if err != nil {
 				slog.Error("error getting engineers", "error", err)
 				c.signalCh <- syscall.SIGTERM
 			}
 
-			slog.Info("fetched engineers", "engineers", len(gotURLs))
+			slog.Debug("fetched engineers", "engineers", len(gotURLs))
 			for _, url := range gotURLs {
 				c.URLch <- url.(string)
 			}
@@ -81,7 +81,7 @@ func (c *Crawler) Run(ctx context.Context, s Storage, f func(string) (string, er
 
 	go func() {
 		for v := range c.resultCh {
-			slog.Info("saving fetched sites response")
+			slog.Debug("saving fetched sites response")
 			err := s.SaveSite(ctx, []mongodb.Site{
 				{
 					URL:            v.URL,

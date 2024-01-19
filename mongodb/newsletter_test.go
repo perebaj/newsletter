@@ -6,6 +6,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -168,6 +169,102 @@ func TestNLStorageSites(t *testing.T) {
 	t.Cleanup(teardown(ctx, client, DBName))
 }
 
+func TestNLStorageSaveEngineer(t *testing.T) {
+	ctx := context.Background()
+	client, DBName := setup(ctx, t)
+
+	database := client.Database(DBName)
+	collection := database.Collection("engineers")
+
+	want := Engineer{
+		Name: "John", URL: "https://www.1.com", Description: "John is a software engineer",
+	}
+
+	want2 := Engineer{
+		Name: "John", URL: "https://www.2.com", Description: "John is a software engineer",
+	}
+
+	NLStorage := NewNLStorage(client, DBName)
+	err := NLStorage.SaveEngineer(ctx, want)
+	if err != nil {
+		t.Fatal("error saving 1 engineer", err)
+	}
+
+	err = NLStorage.SaveEngineer(ctx, want2)
+	if err != nil {
+		t.Fatal("error saving 2 engineer", err)
+	}
+
+	var got []Engineer
+	cursor, err := collection.Find(context.Background(), bson.M{})
+	if err != nil {
+		t.Fatal("error finding engineer", err)
+	}
+
+	if err := cursor.All(ctx, &got); err != nil {
+		t.Fatal("error decoding engineer", err)
+	}
+
+	if len(got) == 2 {
+		if !reflect.DeepEqual(got, []Engineer{want, want2}) {
+			t.Fatalf("got %v, want %v", got, []Engineer{want, want2})
+		}
+	} else {
+		t.Fatal("expected 2 engineers, got", len(got))
+	}
+
+	t.Cleanup(teardown(ctx, client, DBName))
+}
+
+func TestNLStorageDistinctEngineerURLs(t *testing.T) {
+	ctx := context.Background()
+	client, DBName := setup(ctx, t)
+
+	want := Engineer{
+		Name: "John", URL: "https://www.1.com", Description: "John is a software engineer",
+	}
+
+	want2 := Engineer{
+		Name: "John", URL: "https://www.2.com", Description: "John is a software engineer",
+	}
+
+	want3 := Engineer{
+		Name: "John", URL: "https://www.2.com", Description: "John is a software engineer",
+	}
+
+	NLStorage := NewNLStorage(client, DBName)
+
+	err := NLStorage.SaveEngineer(ctx, want)
+	if err != nil {
+		t.Fatal("error saving 1 engineer", err)
+	}
+
+	err = NLStorage.SaveEngineer(ctx, want2)
+	if err != nil {
+		t.Fatal("error saving 2 engineer", err)
+	}
+
+	err = NLStorage.SaveEngineer(ctx, want3)
+	if err != nil {
+		t.Fatal("error saving 3 engineer", err)
+	}
+
+	got, err := NLStorage.DistinctEngineerURLs(ctx)
+	if err != nil {
+		t.Fatal("error getting engineers", err)
+	}
+
+	if len(got) == 2 {
+		if !reflect.DeepEqual(got, []interface{}{want.URL, want2.URL}) {
+			t.Fatalf("got %v, want %v", got, []interface{}{want.URL, want2.URL})
+		}
+	} else {
+		t.Fatal("expected 2 engineers, got", len(got))
+	}
+
+	t.Cleanup(teardown(ctx, client, DBName))
+}
+
 func assert(t testing.TB, got, want interface{}) {
 	t.Helper()
 	if got != want {
@@ -184,8 +281,7 @@ func teardown(ctx context.Context, client *mongo.Client, DBName string) func() {
 }
 
 func setup(ctx context.Context, t testing.TB) (*mongo.Client, string) {
-	// TODO: Receive the URI from the environment variable
-	URI := "mongodb://root:root@mongodb:27017/"
+	URI := os.Getenv("NL_MONGO_URI")
 	client, err := OpenDB(ctx, Config{
 		URI: URI,
 	})

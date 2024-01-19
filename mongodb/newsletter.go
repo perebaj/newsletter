@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,6 +13,13 @@ import (
 type Newsletter struct {
 	UserEmail string   `bson:"user_email"`
 	URLs      []string `bson:"urls"`
+}
+
+// Engineer is the struct that gather the scraped content of an engineer
+type Engineer struct {
+	Name        string `bson:"name"`
+	Description string `bson:"description"`
+	URL         string `bson:"url"`
 }
 
 // Site is the struct that gather the scraped content of a website
@@ -31,6 +39,30 @@ func (m *NLStorage) SaveNewsletter(ctx context.Context, newsletter Newsletter) e
 		return err
 	}
 	return nil
+}
+
+// SaveEngineer saves an engineer in the database
+func (m *NLStorage) SaveEngineer(ctx context.Context, e Engineer) error {
+	database := m.client.Database(m.DBName)
+	collection := database.Collection("engineers")
+	_, err := collection.InsertOne(ctx, e)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DistinctEngineerURLs returns all url sites of each distinct engineer
+func (m *NLStorage) DistinctEngineerURLs(ctx context.Context) ([]interface{}, error) {
+	database := m.client.Database(m.DBName)
+	collection := database.Collection("engineers")
+
+	resp, err := collection.Distinct(ctx, "url", bson.M{})
+	if err != nil {
+		return nil, fmt.Errorf("error getting engineers: %w", err)
+	}
+
+	return resp, nil
 }
 
 // Newsletter returns all the newsletters in the database

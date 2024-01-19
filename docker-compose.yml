@@ -9,6 +9,8 @@ services:
       args:
         GO_VERSION: $GO_VERSION
         GOLANGCI_LINT_VERSION: $GOLANGCI_LINT_VERSION
+    environment:
+      NL_MONGO_URI: "mongodb://root:root@mongodb:27017"
     depends_on:
       - mongodb
     volumes:

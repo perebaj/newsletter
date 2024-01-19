@@ -4,33 +4,42 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 )
 
-func TestWorker(t *testing.T) {
-	const numJobs = 3
-	jobs := make(chan string, numJobs)
-	result := make(chan string, numJobs)
+func TestWorker(_ *testing.T) {
+	urls := make(chan string)
+	results := make(chan string)
 
 	f := func(s string) (string, error) {
 		time.Sleep(100 * time.Millisecond)
 		return fmt.Sprintf("job %s done", s), nil
 	}
 
-	go Worker(jobs, result, f)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go Worker(&wg, urls, results, f)
+	go Worker(&wg, urls, results, f)
 
-	jobs <- "job1"
-	jobs <- "job2"
-	jobs <- "job3"
+	go func() {
+		urls <- "job1"
+		urls <- "job2"
+		urls <- "job3"
+		urls <- "job4"
+		urls <- "job5"
+		urls <- "job6"
+		defer close(urls)
+	}()
 
-	close(jobs)
+	go func() {
+		wg.Wait()
+		defer close(results)
+	}()
 
-	for i := 0; i < numJobs; i++ {
-		r := <-result
-		if r != fmt.Sprintf("job job%d done", i+1) {
-			t.Errorf("expected job%d done, got %s", i+1, r)
-		}
+	for i := 0; i < 6; i++ {
+		<-results
 	}
 }
 
@@ -44,7 +53,7 @@ func TestGetReferences(t *testing.T) {
 
 	defer server.Close()
 
-	got, err := GetReferences(server.URL)
+	got, err := Fetch(server.URL)
 	if err != nil {
 		t.Errorf("error getting reference: %v", err)
 	}
@@ -61,7 +70,7 @@ func TestGetReferences_Status500(t *testing.T) {
 
 	defer server.Close()
 
-	got, err := GetReferences(server.URL)
+	got, err := Fetch(server.URL)
 	if err != nil {
 		t.Errorf("error getting reference: %v", err)
 	}

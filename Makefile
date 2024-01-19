@@ -1,6 +1,7 @@
 # TOOLS VERSIONS
 export GO_VERSION=1.21.5
 export GOLANGCI_LINT_VERSION=v1.55.2
+
 devimage=newsletter-dev
 gopkg=$(devimage)-gopkg
 gocache=$(devimage)-gocache
@@ -93,6 +94,11 @@ dev/logs:
 .PHONY: dev/stop
 dev/stop:
 	docker-compose stop
+
+## Dev container cleanup (remove volumes and images)
+.PHONY: dev/cleanup
+dev/cleanup:
+	docker-compose down -v --remove-orphans --rmi all
 
 ## Access the container
 dev:

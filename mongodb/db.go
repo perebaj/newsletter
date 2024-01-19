@@ -3,6 +3,7 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -15,6 +16,10 @@ type Config struct {
 
 // OpenDB connects to the MongoDB instance.
 func OpenDB(ctx context.Context, cfg Config) (*mongo.Client, error) {
+	if cfg.URI == "" {
+		return nil, fmt.Errorf("MongoDB URI is empty")
+	}
+
 	bsonOpts := &options.BSONOptions{
 		UseJSONStructTags: true,
 		NilSliceAsEmpty:   true,

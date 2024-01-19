@@ -1,8 +1,9 @@
 # Newsletter
 
+Some skilled engineers even have a blog site where they push some gold content, but they doesn't have yet, a way for their fan base to have recurrent access to this content. Newsletter try to circumvent it, scraping their pages and triggering e-mails for the guys who have an interest in those hidden gems.
+
 ![newsletter](./assets/newsletter.png)
 
-Why the software magicians guys don't have an newsletter?  
 
 
 # Roadmap

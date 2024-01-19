@@ -4,7 +4,6 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -20,8 +19,6 @@ func OpenDB(ctx context.Context, cfg Config) (*mongo.Client, error) {
 	if cfg.URI == "" {
 		return nil, fmt.Errorf("MongoDB URI is empty")
 	}
-
-	slog.Info("connected successfully to MongoDB instance")
 
 	bsonOpts := &options.BSONOptions{
 		UseJSONStructTags: true,

@@ -50,6 +50,8 @@ func main() {
 		signalCh <- syscall.SIGTERM
 	}
 
+	slog.Info("connected successfully to MongoDB instance")
+
 	storage := mongodb.NewNLStorage(client, "newsletter")
 
 	err = storage.SaveEngineer(ctx, mongodb.Engineer{

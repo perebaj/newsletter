@@ -24,9 +24,14 @@ coverage:
 	go test -coverprofile=c.out 
 	go tool cover -html=c.out
 
+## Run all tests including the integration tests (requires docker up and running). Usage `make integration-test` or `make integration-test testcase="TestFunctionName"` to run an isolated tests
 .PHONY: integration-test
 integration-test:
-	go test -timeout 5s -tags=integration ./... -v
+	if [ -n "$(testcase)" ]; then \
+		go test ./... -timeout 5s -tags integration -v -run="^$(testcase)$$" ; \
+	else \
+		go test ./... -timeout 5s -tags integration; \
+	fi
 
 ## builds the service
 .PHONY: service

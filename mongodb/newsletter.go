@@ -82,7 +82,7 @@ func (m *NLStorage) Newsletter() ([]Newsletter, error) {
 	return newsletters, nil
 }
 
-// SavePage saves a site in the database
+// SavePage saves the scraped content of a website
 func (m *NLStorage) SavePage(ctx context.Context, pages []Page) error {
 	database := m.client.Database(m.DBName)
 	collection := database.Collection("pages")

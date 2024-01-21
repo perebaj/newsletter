@@ -126,34 +126,6 @@ func TestNLStorageSavePage(t *testing.T) {
 		t.Fatal("expected 1 page, got", len(got))
 	}
 
-	// if len(page) == 0 {
-	// 	want[0].Updated = true
-	// 	err := NLStorage.SavePage(ctx, want)
-	// 	if err != nil {
-	// 		t.Fatal("error saving page", err)
-	// 	}
-	// } else {
-	// 	// Verifing if the new content is newest than the last one
-	// 	lastScrapedPage, err := NLStorage.Page(ctx, want[0].URL)
-	// 	if err != nil {
-	// 		t.Fatal("error getting page", err)
-	// 	}
-
-	// 	if lastScrapedPage[0].HashMD5 != want[0].HashMD5 {
-	// 		want[0].Updated = true
-	// 		err = NLStorage.SavePage(ctx, want)
-	// 		if err != nil {
-	// 			t.Fatal("error saving page", err)
-	// 		}
-	// 	} else {
-	// 		t.Fatal("page already scraped")
-	// 		want[0].Updated = false
-	// 		err = NLStorage.SavePage(ctx, want)
-	// 		if err != nil {
-	// 			t.Fatal("error saving page", err)
-	// 		}
-	// 	}
-
 	t.Cleanup(teardown(ctx, client, DBName))
 }
 

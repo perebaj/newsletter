@@ -88,7 +88,7 @@ func (c *Crawler) Run(ctx context.Context, s Storage, f func(string) (string, er
 
 			lastScrapedPage, err := s.Page(ctx, r.URL)
 			if err != nil {
-				slog.Error("error gerrting Page: %v", err)
+				slog.Error("error getting page: %v", err)
 				c.signalCh <- syscall.SIGTERM
 			}
 

@@ -5,6 +5,7 @@ package mongodb
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
 	"os"
 	"reflect"
@@ -90,80 +91,71 @@ func TestNLStorageNewsletter(t *testing.T) {
 	t.Cleanup(teardown(ctx, client, DBName))
 }
 
-func TestNLStorageSaveSite(t *testing.T) {
+func TestNLStorageSavePage(t *testing.T) {
 	ctx := context.Background()
 	client, DBName := setup(ctx, t)
 
 	database := client.Database(DBName)
-	collection := database.Collection("sites")
+	collection := database.Collection("pages")
 
-	want := []Site{
-		{UserEmail: "j@gmail.com", URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 14, 15, 30, 0, 0, time.UTC)},
-		{UserEmail: "j@gmail.com", URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 14, 15, 30, 0, 0, time.UTC)},
-		{UserEmail: "jj@gmail.com", URL: "https://www.jj.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 14, 15, 30, 0, 0, time.UTC)},
+	want := []Page{
+		{IsMostRecent: true, URL: "https://www.google.com", Content: "HTML", HashMD5: md5.Sum([]byte("HTML")), ScrapeDatetime: time.Date(2023, time.August, 13, 15, 30, 0, 0, time.UTC)},
 	}
 
-	NLStorage := NewNLStorage(client, DBName)
-	err := NLStorage.SaveSite(ctx, want)
-
+	storage := NewNLStorage(client, DBName)
+	err := storage.SavePage(ctx, want)
 	if err != nil {
-		t.Fatal("error saving site", err)
+		t.Fatal("error saving page", err)
 	}
 
-	var got []Site
+	var got []Page
 	cursor, err := collection.Find(context.Background(), bson.M{})
 	if err != nil {
-		t.Fatal("error finding site", err)
+		t.Fatal("error finding page", err)
 	}
 
 	if err := cursor.All(ctx, &got); err != nil {
-		t.Fatal("error decoding site", err)
+		t.Fatal("error decoding page", err)
 	}
 
-	if len(got) == 3 {
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got %v, want %v", got, want)
+	if len(got) == 1 {
+		if !reflect.DeepEqual(got[0], want[0]) {
+			t.Fatalf("got %v, want %v", got[0], want[0])
 		}
 	} else {
-		t.Fatal("expected 2 sites, got", len(got))
+		t.Fatal("expected 1 page, got", len(got))
 	}
 
 	t.Cleanup(teardown(ctx, client, DBName))
 }
 
-func TestNLStorageSites(t *testing.T) {
+func TestNLStoragePage(t *testing.T) {
 	ctx := context.Background()
 	client, DBName := setup(ctx, t)
 
-	want := []Site{
-		{UserEmail: "j@gmail.com", URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 13, 15, 30, 0, 0, time.UTC)},
-		{UserEmail: "j@gmail.com", URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 12, 15, 30, 0, 0, time.UTC)},
-		{UserEmail: "j@gmail.com", URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 11, 15, 30, 0, 0, time.UTC)},
+	want := []Page{
+		{URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 13, 15, 30, 0, 0, time.UTC)},
+		{URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 11, 15, 30, 0, 0, time.UTC)},
+		{URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 12, 15, 30, 0, 0, time.UTC)},
 	}
 
-	NLStorage := NewNLStorage(client, DBName)
-	err := NLStorage.SaveSite(ctx, want)
+	storage := NewNLStorage(client, DBName)
+	err := storage.SavePage(ctx, want)
 	if err != nil {
-		t.Fatal("error saving site", err)
+		t.Fatal("error saving page", err)
 	}
 
-	got, err := NLStorage.Sites("j@gmail.com", "https://www.google.com")
+	got, err := storage.Page(ctx, "https://www.google.com")
 	if err != nil {
-		t.Fatal("error getting site", err)
+		t.Fatal("error getting page", err)
 	}
 
-	if len(got) == 2 {
-		assert(t, got[0].UserEmail, want[0].UserEmail)
-		assert(t, got[0].URL, want[0].URL)
-		assert(t, got[0].Content, want[0].Content)
-		assert(t, got[0].ScrapeDatetime, want[0].ScrapeDatetime)
-
-		assert(t, got[1].UserEmail, want[1].UserEmail)
-		assert(t, got[1].URL, want[1].URL)
-		assert(t, got[1].Content, want[1].Content)
-		assert(t, got[1].ScrapeDatetime, want[1].ScrapeDatetime)
+	if len(got) == 1 {
+		if !reflect.DeepEqual(got[0], want[0]) {
+			t.Fatalf("got %v, want %v", got[0], want[0])
+		}
 	} else {
-		t.Fatal("expected 2 sites, got", len(got))
+		t.Fatal("expected 1 page, got", len(got))
 	}
 
 	t.Cleanup(teardown(ctx, client, DBName))

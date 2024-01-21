@@ -2,6 +2,7 @@ package newsletter
 
 import (
 	"context"
+	"crypto/md5"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +13,46 @@ import (
 )
 
 const fakeURL = "http://fakeurl.test"
+
+func TestPageComparation(t *testing.T) {
+	recentScrapedPage := Page{
+		Content:        "Hello, World!",
+		URL:            fakeURL,
+		ScrapeDateTime: time.Now().UTC(),
+	}
+
+	lastScrapedPage := []mongodb.Page{
+		{
+			Content:        "Hello, World!",
+			URL:            fakeURL,
+			ScrapeDatetime: time.Now().UTC().Add(-time.Duration(1) * time.Hour),
+			HashMD5:        md5.Sum([]byte("Hello, World!")),
+		},
+	}
+
+	newPage := pageComparation(lastScrapedPage, recentScrapedPage)
+
+	if newPage[0].IsMostRecent {
+		t.Errorf("expected false, got %v", newPage[0].IsMostRecent)
+	}
+
+	lastScrapedPage[0].Content = "Hello, World! 2"
+	lastScrapedPage[0].HashMD5 = md5.Sum([]byte("Hello, World! 2"))
+
+	newPage = pageComparation(lastScrapedPage, recentScrapedPage)
+
+	if !newPage[0].IsMostRecent {
+		t.Errorf("expected true, got %v", newPage[0].IsMostRecent)
+	}
+
+	lastScrapedPage = []mongodb.Page{}
+
+	newPage = pageComparation(lastScrapedPage, recentScrapedPage)
+
+	if !newPage[0].IsMostRecent {
+		t.Errorf("expected true, got %v", newPage[0].IsMostRecent)
+	}
+}
 
 // Even not verifying the result, this test is useful to check if the crawler is running properly, since it is
 // using Mocks for the Storage and the Fetch function.
@@ -75,23 +116,21 @@ func TestGetReferences_Status500(t *testing.T) {
 	}
 }
 
-// TODO: Move the StorageMock to a separate file, preferable in the same package(mongodb)
-type StorageMock interface {
-	SaveSite(ctx context.Context, site []mongodb.Site) error
-	DistinctEngineerURLs(ctx context.Context) ([]interface{}, error)
-}
-
 type StorageMockImpl struct {
 }
 
-func NewStorageMock() StorageMock {
+func NewStorageMock() StorageMockImpl {
 	return StorageMockImpl{}
 }
 
-func (s StorageMockImpl) SaveSite(_ context.Context, _ []mongodb.Site) error {
+func (s StorageMockImpl) SavePage(_ context.Context, _ []mongodb.Page) error {
 	return nil
 }
 
 func (s StorageMockImpl) DistinctEngineerURLs(_ context.Context) ([]interface{}, error) {
 	return []interface{}{fakeURL}, nil
+}
+
+func (s StorageMockImpl) Page(_ context.Context, _ string) ([]mongodb.Page, error) {
+	return []mongodb.Page{}, nil
 }

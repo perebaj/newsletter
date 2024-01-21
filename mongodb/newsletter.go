@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Newsletter is the struct that gather what websites to scrape for an user email
@@ -22,12 +21,13 @@ type Engineer struct {
 	URL         string `bson:"url"`
 }
 
-// Site is the struct that gather the scraped content of a website
-type Site struct {
-	UserEmail      string    `bson:"user_email"`
+// Page is the struct that gather the scraped content of a website
+type Page struct {
 	URL            string    `bson:"url"`
 	Content        string    `bson:"content"`
 	ScrapeDatetime time.Time `bson:"scrape_date"`
+	HashMD5        [16]byte  `bson:"hash_md5"`
+	IsMostRecent   bool      `bson:"is_most_recent"`
 }
 
 // SaveNewsletter saves a newsletter in the database
@@ -59,7 +59,7 @@ func (m *NLStorage) DistinctEngineerURLs(ctx context.Context) ([]interface{}, er
 
 	resp, err := collection.Distinct(ctx, "url", bson.M{})
 	if err != nil {
-		return nil, fmt.Errorf("error getting engineers: %w", err)
+		return nil, fmt.Errorf("error getting engineers: %v", err)
 	}
 
 	return resp, nil
@@ -82,13 +82,13 @@ func (m *NLStorage) Newsletter() ([]Newsletter, error) {
 	return newsletters, nil
 }
 
-// SaveSite saves a site in the database
-func (m *NLStorage) SaveSite(ctx context.Context, sites []Site) error {
+// SavePage saves the scraped content of a website
+func (m *NLStorage) SavePage(ctx context.Context, pages []Page) error {
 	database := m.client.Database(m.DBName)
-	collection := database.Collection("sites")
+	collection := database.Collection("pages")
 
 	var docs []interface{}
-	for _, site := range sites {
+	for _, site := range pages {
 		docs = append(docs, site)
 	}
 	_, err := collection.InsertMany(ctx, docs)
@@ -98,25 +98,36 @@ func (m *NLStorage) SaveSite(ctx context.Context, sites []Site) error {
 	return nil
 }
 
-// Sites returns given an user email and a URL, the last scraped content of that URL
-func (m *NLStorage) Sites(usrEmail, URL string) ([]Site, error) {
+// Page returns the last scraped content of a given url
+func (m *NLStorage) Page(ctx context.Context, url string) ([]Page, error) {
+	var page []Page
 	database := m.client.Database(m.DBName)
-	collection := database.Collection("sites")
-	max := int64(2)
+	collection := database.Collection("pages")
 
-	filter := bson.M{"user_email": usrEmail, "url": URL}
-	sort := bson.D{{Key: "scrape_date", Value: -1}}
-	opts := options.Find().SetSort(sort)
-	opts.Limit = &max
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"url": url,
+			},
+		},
+		{
+			"$sort": bson.M{
+				"scrape_date": -1,
+			},
+		},
+		{
+			"$limit": 1,
+		},
+	}
 
-	cursor, err := collection.Find(context.Background(), filter, opts)
+	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, err
+		return page, fmt.Errorf("error getting page: %v", err)
 	}
 
-	var sites []Site
-	if err = cursor.All(context.Background(), &sites); err != nil {
-		return nil, err
+	if err = cursor.All(ctx, &page); err != nil {
+		return page, fmt.Errorf("error decoding page: %v", err)
 	}
-	return sites, nil
+
+	return page, nil
 }

@@ -26,6 +26,10 @@ func NewMailClient(cfg EmailConfig) *MailClient {
 	}
 }
 
+type Email interface {
+	Send(dest []string, bodyMessage string) error
+}
+
 // Send sends an email to the given destination
 func (m MailClient) Send(dest []string, bodyMessage string) error {
 	auth := smtp.PlainAuth("", m.cfg.UserName, m.cfg.Password, SMTPServer)

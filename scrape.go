@@ -32,10 +32,6 @@ type Storage interface {
 	PageIn(ctx context.Context, urls []string) ([]mongodb.Page, error)
 }
 
-type Email interface {
-	Send(dest []string, bodyMessage string) error
-}
-
 // Crawler contains the necessary information to run the crawler
 type Crawler struct {
 	URLch    chan string
@@ -173,4 +169,3 @@ func Fetch(url string) (string, error) {
 
 	return bodyString, nil
 }
-

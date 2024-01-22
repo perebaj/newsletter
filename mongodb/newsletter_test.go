@@ -129,6 +129,37 @@ func TestNLStorageSavePage(t *testing.T) {
 	t.Cleanup(teardown(ctx, client, DBName))
 }
 
+func TestNLStoragePageIn(t *testing.T) {
+	ctx := context.Background()
+	client, DBName := setup(ctx, t)
+
+	want := []Page{
+		{URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 13, 15, 30, 0, 0, time.UTC), IsMostRecent: true, HashMD5: md5.Sum([]byte("HTML"))},
+		{URL: "https://www.google.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 12, 15, 30, 0, 0, time.UTC), IsMostRecent: true, HashMD5: md5.Sum([]byte("HTML"))},
+		{URL: "https://facebook.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 11, 15, 30, 0, 0, time.UTC), IsMostRecent: true, HashMD5: md5.Sum([]byte("HTML"))},
+		{URL: "https://jj.com", Content: "HTML", ScrapeDatetime: time.Date(2023, time.August, 15, 15, 30, 0, 0, time.UTC), IsMostRecent: true, HashMD5: md5.Sum([]byte("HTML"))},
+	}
+
+	storage := NewNLStorage(client, DBName)
+	err := storage.SavePage(ctx, want)
+	if err != nil {
+		t.Fatal("error saving page", err)
+	}
+
+	got, err := storage.PageIn(ctx, []string{"https://www.google.com", "https://facebook.com", "https://jj.com"})
+	if err != nil {
+		t.Fatal("error getting page", err)
+	}
+
+	lenWant := 3
+	if len(got) == lenWant {
+		reflect.DeepEqual(got, []Page{want[0], want[2], want[3]})
+	} else {
+		t.Fatalf("expected %d pages, got %d", lenWant, len(got))
+	}
+	t.Cleanup(teardown(ctx, client, DBName))
+}
+
 func TestNLStoragePage(t *testing.T) {
 	ctx := context.Background()
 	client, DBName := setup(ctx, t)

@@ -126,3 +126,9 @@ func (s StorageMockImpl) DistinctEngineerURLs(_ context.Context) ([]interface{},
 func (s StorageMockImpl) Page(_ context.Context, _ string) ([]mongodb.Page, error) {
 	return []mongodb.Page{}, nil
 }
+func (s StorageMockImpl) Newsletter() ([]mongodb.Newsletter, error) {
+	return []mongodb.Newsletter{{URLs: []string{fakeURL}}}, nil
+}
+func (s StorageMockImpl) PageIn(_ context.Context, _ []string) ([]mongodb.Page, error) {
+	return []mongodb.Page{}, nil
+}

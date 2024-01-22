@@ -28,6 +28,12 @@ type Storage interface {
 	SavePage(ctx context.Context, site []mongodb.Page) error
 	DistinctEngineerURLs(ctx context.Context) ([]interface{}, error)
 	Page(ctx context.Context, url string) ([]mongodb.Page, error)
+	Newsletter() ([]mongodb.Newsletter, error)
+	PageIn(ctx context.Context, urls []string) ([]mongodb.Page, error)
+}
+
+type Email interface {
+	Send(dest []string, bodyMessage string) error
 }
 
 // Crawler contains the necessary information to run the crawler
@@ -167,3 +173,4 @@ func Fetch(url string) (string, error) {
 
 	return bodyString, nil
 }
+

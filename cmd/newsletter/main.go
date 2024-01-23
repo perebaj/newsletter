@@ -19,6 +19,7 @@ type Config struct {
 	LogLevel string
 	LogType  string
 	Mongo    mongodb.Config
+	Email    newsletter.EmailConfig
 }
 
 func main() {
@@ -28,6 +29,10 @@ func main() {
 		LogType:  getEnvWithDefault("LOG_TYPE", ""),
 		Mongo: mongodb.Config{
 			URI: getEnvWithDefault("NL_MONGO_URI", ""),
+		},
+		Email: newsletter.EmailConfig{
+			Password: getEnvWithDefault("NL_EMAIL_PASSWORD", ""),
+			Username: getEnvWithDefault("NL_EMAIL_USERNAME", ""),
 		},
 	}
 
@@ -75,6 +80,18 @@ func main() {
 
 	go func() {
 		crawler.Run(ctx, storage, newsletter.Fetch)
+	}()
+
+	mail := newsletter.NewMailClient(cfg.Email)
+
+	go func() {
+		for range time.Tick(time.Duration(50) * time.Second) {
+			err := newsletter.EmailTrigger(ctx, storage, mail)
+			if err != nil {
+				slog.Error("error sending email", "error", err)
+				signalCh <- syscall.SIGTERM
+			}
+		}
 	}()
 
 	<-signalCh

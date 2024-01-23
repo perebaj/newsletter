@@ -13,7 +13,7 @@ const SMTPServer = "smtp.gmail.com"
 // EmailConfig contains the necessary information to authenticate in the SMTP server
 type EmailConfig struct {
 	Password string
-	UserName string
+	Username string
 }
 
 // MailClient is the client that sends emails
@@ -35,14 +35,14 @@ type Email interface {
 
 // Send sends an email to the given destination
 func (m MailClient) Send(dest []string, bodyMessage string) error {
-	auth := smtp.PlainAuth("", m.cfg.UserName, m.cfg.Password, SMTPServer)
+	auth := smtp.PlainAuth("", m.cfg.Username, m.cfg.Password, SMTPServer)
 
 	msg := []byte("To: " + dest[0] + "\r\n" +
 		"Subject: Newsletter\r\n" +
 		"\r\n" +
 		bodyMessage + "\r\n")
 
-	err := smtp.SendMail(SMTPServer+":587", auth, m.cfg.UserName, dest, []byte(msg))
+	err := smtp.SendMail(SMTPServer+":587", auth, m.cfg.Username, dest, []byte(msg))
 	if err != nil {
 		return fmt.Errorf("error sending email: %v", err)
 	}

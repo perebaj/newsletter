@@ -79,7 +79,7 @@ func TestCrawlerRun(t *testing.T) {
 	}
 }
 
-func TestGetReferences(t *testing.T) {
+func TestFetch(t *testing.T) {
 	wantBody := "Hello, World!"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -99,7 +99,7 @@ func TestGetReferences(t *testing.T) {
 	}
 }
 
-func TestGetReferences_Status500(t *testing.T) {
+func TestFetch_Status500(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
@@ -116,21 +116,37 @@ func TestGetReferences_Status500(t *testing.T) {
 	}
 }
 
-type StorageMockImpl struct {
+func TestEmailTrigger(t *testing.T) {
+	ctx := context.Background()
+	s := NewStorageMock()
+	e := MailClientMockImpl{}
+
+	err := EmailTrigger(ctx, s, e)
+	if err != nil {
+		t.Errorf("expected nil, got %v", err)
+	}
 }
 
-func NewStorageMock() StorageMockImpl {
-	return StorageMockImpl{}
-}
+type MailClientMockImpl struct{}
 
-func (s StorageMockImpl) SavePage(_ context.Context, _ []mongodb.Page) error {
-	return nil
-}
+func (m MailClientMockImpl) Send(_ []string, _ string) error { return nil }
 
+type StorageMockImpl struct{}
+
+func NewStorageMock() StorageMockImpl                                        { return StorageMockImpl{} }
+func (s StorageMockImpl) SavePage(_ context.Context, _ []mongodb.Page) error { return nil }
 func (s StorageMockImpl) DistinctEngineerURLs(_ context.Context) ([]interface{}, error) {
 	return []interface{}{fakeURL}, nil
 }
-
 func (s StorageMockImpl) Page(_ context.Context, _ string) ([]mongodb.Page, error) {
 	return []mongodb.Page{}, nil
+}
+func (s StorageMockImpl) Newsletter() ([]mongodb.Newsletter, error) {
+	return []mongodb.Newsletter{{URLs: []string{fakeURL}}}, nil
+}
+func (s StorageMockImpl) PageIn(_ context.Context, _ []string) ([]mongodb.Page, error) {
+	return []mongodb.Page{
+		{IsMostRecent: true, URL: fakeURL, Content: "Hello, World!", HashMD5: md5.Sum([]byte("Hello, World!"))},
+		{IsMostRecent: true, URL: fakeURL, Content: "Hello, World! 2", HashMD5: md5.Sum([]byte("Hello, World! 2"))},
+	}, nil
 }

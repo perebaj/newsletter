@@ -98,6 +98,52 @@ func (m *NLStorage) SavePage(ctx context.Context, pages []Page) error {
 	return nil
 }
 
+// PageIn returns the last scraped content of a given list of urls
+func (m *NLStorage) PageIn(ctx context.Context, urls []string) ([]Page, error) {
+	database := m.client.Database(m.DBName)
+	collection := database.Collection("pages")
+
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"url": bson.M{
+					"$in": urls,
+				},
+			},
+		},
+		{
+			"$sort": bson.M{
+				"scrape_date": -1,
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id": "$url",
+				"page": bson.M{
+					"$first": "$$ROOT",
+				},
+			},
+		},
+		{
+			"$replaceRoot": bson.M{
+				"newRoot": "$page",
+			},
+		},
+	}
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("error getting page: %v", err)
+	}
+
+	var page []Page
+	if err = cursor.All(ctx, &page); err != nil {
+		return page, fmt.Errorf("error decoding page: %v", err)
+	}
+
+	return page, nil
+}
+
 // Page returns the last scraped content of a given url
 func (m *NLStorage) Page(ctx context.Context, url string) ([]Page, error) {
 	var page []Page

@@ -116,6 +116,21 @@ func TestFetch_Status500(t *testing.T) {
 	}
 }
 
+func TestEmailTrigger(t *testing.T) {
+	ctx := context.Background()
+	s := NewStorageMock()
+	e := MailClientMockImpl{}
+
+	err := EmailTrigger(ctx, s, e)
+	if err != nil {
+		t.Errorf("expected nil, got %v", err)
+	}
+}
+
+type MailClientMockImpl struct{}
+
+func (m MailClientMockImpl) Send(_ []string, _ string) error { return nil }
+
 type StorageMockImpl struct{}
 
 func NewStorageMock() StorageMockImpl                                        { return StorageMockImpl{} }
@@ -130,5 +145,8 @@ func (s StorageMockImpl) Newsletter() ([]mongodb.Newsletter, error) {
 	return []mongodb.Newsletter{{URLs: []string{fakeURL}}}, nil
 }
 func (s StorageMockImpl) PageIn(_ context.Context, _ []string) ([]mongodb.Page, error) {
-	return []mongodb.Page{}, nil
+	return []mongodb.Page{
+		{IsMostRecent: true, URL: fakeURL, Content: "Hello, World!", HashMD5: md5.Sum([]byte("Hello, World!"))},
+		{IsMostRecent: true, URL: fakeURL, Content: "Hello, World! 2", HashMD5: md5.Sum([]byte("Hello, World! 2"))},
+	}, nil
 }

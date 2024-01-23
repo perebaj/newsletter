@@ -16,16 +16,19 @@ type EmailConfig struct {
 	UserName string
 }
 
+// MailClient is the client that sends emails
 type MailClient struct {
 	cfg EmailConfig
 }
 
+// NewMailClient creates a new MailClient
 func NewMailClient(cfg EmailConfig) *MailClient {
 	return &MailClient{
 		cfg: cfg,
 	}
 }
 
+// Email is the interface that wraps the methods needed to deal with emails
 type Email interface {
 	Send(dest []string, bodyMessage string) error
 }
@@ -46,6 +49,7 @@ func (m MailClient) Send(dest []string, bodyMessage string) error {
 	return nil
 }
 
+// EmailTrigger get all newsletters and send an email to the user with new articles were found
 func EmailTrigger(ctx context.Context, s Storage, e Email) error {
 	nl, err := s.Newsletter()
 	if err != nil {

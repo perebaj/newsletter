@@ -1,3 +1,4 @@
+// nolint
 package mock
 
 type MailClientMockImpl struct{}

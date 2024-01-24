@@ -4,19 +4,9 @@ Some skilled engineers even have a blog site where they push some gold content, 
 
 ![newsletter](./assets/newsletter.png)
 
+## Architecture
 
-
-# Roadmap
-
-This program aims to create the following features:
-
-- Given a list of websites, that are located in a MongoDB collection, scrape the content of each website and save it in another MongoDB collection. ✅
-- After the scraping, calculate the similarity between the new content and the previous content of each website, and update the MongoDB collection
-with this information. ✅
-- All the registered users will receive an email according to the URL that they have registered notifying them about news in their favorite engineers websites. ✅
-
-Obs: All these flows will be trigerred by a cron job. ✅
-
+![architecture](./assets/newsletterarq.png)
 
 ## Environement Variables
 
@@ -49,4 +39,14 @@ Access the dev container and run the tests:
     make integration-test
 ```
 
+# Roadmap
 
+This program aims to create the following features:
+
+- Given a list of websites, that are located in a MongoDB collection, scrape the content of each website and save it in another MongoDB collection. ✅
+- After the scraping, calculate the similarity between the new content and the previous content of each website, and update the MongoDB collection
+with this information. ✅
+- All the registered users will receive an email according to the URL that they have registered notifying them about news in their favorite engineers websites. ✅
+- Create API routes to register new users and the websites that they want to follow. ⌛
+
+Obs: All these flows will be trigerred by a cron job. ✅

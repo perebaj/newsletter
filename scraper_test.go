@@ -9,22 +9,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/perebaj/newsletter/mock"
 	"github.com/perebaj/newsletter/mongodb"
 )
 
-const fakeURL = "http://fakeurl.test"
+// const fakeURL = "http://fakeurl.test"
 
 func TestPageComparation(t *testing.T) {
 	recentScrapedPage := Page{
 		Content:        "Hello, World!",
-		URL:            fakeURL,
+		URL:            mock.FakeURL,
 		ScrapeDateTime: time.Now().UTC(),
 	}
 
 	lastScrapedPage := []mongodb.Page{
 		{
 			Content:        "Hello, World!",
-			URL:            fakeURL,
+			URL:            mock.FakeURL,
 			ScrapeDatetime: time.Now().UTC().Add(-time.Duration(1) * time.Hour),
 			HashMD5:        md5.Sum([]byte("Hello, World!")),
 		},
@@ -59,7 +60,7 @@ func TestPageComparation(t *testing.T) {
 func TestCrawlerRun(t *testing.T) {
 	timeoutCh := time.After(time.Duration(150) * time.Millisecond)
 	ctx := context.Background()
-	s := NewStorageMock()
+	s := mock.NewStorageMock()
 
 	f := func(string) (string, error) {
 		return "Hello, World!", nil
@@ -114,39 +115,4 @@ func TestFetch_Status500(t *testing.T) {
 	if got != "" {
 		t.Errorf("expected empty body, got %s", got)
 	}
-}
-
-func TestEmailTrigger(t *testing.T) {
-	ctx := context.Background()
-	s := NewStorageMock()
-	e := MailClientMockImpl{}
-
-	err := EmailTrigger(ctx, s, e)
-	if err != nil {
-		t.Errorf("expected nil, got %v", err)
-	}
-}
-
-type MailClientMockImpl struct{}
-
-func (m MailClientMockImpl) Send(_ []string, _ string) error { return nil }
-
-type StorageMockImpl struct{}
-
-func NewStorageMock() StorageMockImpl                                        { return StorageMockImpl{} }
-func (s StorageMockImpl) SavePage(_ context.Context, _ []mongodb.Page) error { return nil }
-func (s StorageMockImpl) DistinctEngineerURLs(_ context.Context) ([]interface{}, error) {
-	return []interface{}{fakeURL}, nil
-}
-func (s StorageMockImpl) Page(_ context.Context, _ string) ([]mongodb.Page, error) {
-	return []mongodb.Page{}, nil
-}
-func (s StorageMockImpl) Newsletter() ([]mongodb.Newsletter, error) {
-	return []mongodb.Newsletter{{URLs: []string{fakeURL}}}, nil
-}
-func (s StorageMockImpl) PageIn(_ context.Context, _ []string) ([]mongodb.Page, error) {
-	return []mongodb.Page{
-		{IsMostRecent: true, URL: fakeURL, Content: "Hello, World!", HashMD5: md5.Sum([]byte("Hello, World!"))},
-		{IsMostRecent: true, URL: fakeURL, Content: "Hello, World! 2", HashMD5: md5.Sum([]byte("Hello, World! 2"))},
-	}, nil
 }
